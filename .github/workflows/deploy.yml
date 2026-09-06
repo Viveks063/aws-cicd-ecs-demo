@@ -48,7 +48,7 @@ jobs:
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with: 
           task-definition: task-definition.json
-          container-name: aws-cicd-demo-container
+          container-name: aws-cicd-demo-task
           image: 140023372433.dkr.ecr.ap-south-1.amazonaws.com/aws-cicd-demo:latest
        
       - name: Deploy to ECS
