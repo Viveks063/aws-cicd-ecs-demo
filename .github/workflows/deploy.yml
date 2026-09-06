@@ -1,0 +1,60 @@
+name: Deploy to ECS
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ap-south-1
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
+        run: docker build -t aws-cicd-demo .
+
+      - name: Tag Docker image
+        run: |
+          docker tag aws-cicd-demo:latest 140023372433.dkr.ecr.ap-south-1.amazonaws.com/aws-cicd-demo:latest
+       
+      - name: Push Image to ECR
+        run: |
+          docker push 140023372433.dkr.ecr.ap-south-1.amazonaws.com/aws-cicd-demo:latest
+      
+      - name: Get current ECS task definition
+        run: |
+          aws ecs describe-task-definition \
+          --task-definition aws-cicd-demo-task \
+          --query task-definition > task-definition.json
+
+      - name: Update Container Image
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with: 
+          task-definition: task-definition.json
+          container-name: aws-cicd-demo-container
+          image: 140023372433.dkr.ecr.ap-south-1.amazonaws.com/aws-cicd-demo:latest
+       
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: aws-cicd-demo-service
+          cluster: aws-cicd-demo-cluster
+          wait-for-service-stability: true
