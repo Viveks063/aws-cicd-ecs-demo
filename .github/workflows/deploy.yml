@@ -41,7 +41,7 @@ jobs:
         run: |
           aws ecs describe-task-definition \
           --task-definition aws-cicd-demo-task \
-          --query task-definition > task-definition.json
+          --query taskDefinition > task-definition.json
 
       - name: Update Container Image
         id: task-def
