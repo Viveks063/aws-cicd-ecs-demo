@@ -1,0 +1,33 @@
+name = Deploy to ECS
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ var.AWS_ROLE_ARN }}
+          aws_region: ap-south-1
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v4
+      
+      - name: Build docker Image
+        run: docker build -t aws-cicd-demo .
+
+      - name: Tag docker Image
+        run: |
+          docker tag aws-cicd-demo:latest 140023372433.dkr.ecr.ap-south-1.amazonaws.com/aws-cicd-demo:latest
